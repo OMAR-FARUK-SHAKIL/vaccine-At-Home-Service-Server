@@ -3,12 +3,11 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const MongoClient = require('mongodb').MongoClient;
 const ObjectId = require('mongodb').ObjectID;
-require('dotenv').config()
+require('dotenv').config();
+
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.wj6rs.mongodb.net/vaccineAtHome?retryWrites=true&w=majority`;
 
-// const uri = "mongodb+srv://omarshakil:omarshakil35@cluster0.wj6rs.mongodb.net/vaccineAtHome?retryWrites=true&w=majority";
-// const MongoClient = require('mongodb').MongoClient;
 
 const app = express()
 app.use(bodyParser.json());
