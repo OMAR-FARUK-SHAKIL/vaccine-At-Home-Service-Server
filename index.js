@@ -1,20 +1,19 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-// const fileUpload = require('express-fileupload');
 const MongoClient = require('mongodb').MongoClient;
+const ObjectId = require('mongodb').ObjectID;
 require('dotenv').config()
 
-const uri = "mongodb+srv://emaWatson:emawatson81@cluster0.wj6rs.mongodb.net/vaccineAtHome?retryWrites=true&w=majority";
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.wj6rs.mongodb.net/vaccineAtHome?retryWrites=true&w=majority`;
+
 // const uri = "mongodb+srv://omarshakil:omarshakil35@cluster0.wj6rs.mongodb.net/vaccineAtHome?retryWrites=true&w=majority";
-
-
 // const MongoClient = require('mongodb').MongoClient;
+
 const app = express()
 app.use(bodyParser.json());
 app.use(cors());
-// app.use(express.static('doctors'));
-// app.use(fileUpload());
+
 const port = 5500;
 
 app.get('/', (req, res) => {
@@ -27,6 +26,7 @@ client.connect(err => {
   const serviceCollection = client.db("vaccineAtHome").collection("services");
   const adminCollection = client.db("vaccineAtHome").collection("admin");
   const reviewsCollection = client.db("vaccineAtHome").collection("reviews");
+  const ordersCollection = client.db("vaccineAtHome").collection("orders");
   console.log('DB connected successfully');
 
   app.post('/addService', (req, res) => {
@@ -49,54 +49,86 @@ app.get('/services',(req, res) => {
 })
 
 
-app.get('/appointments', (req, res) => {
-  appointmentCollection.find({})
+app.get('/allOrders', (req, res) => {
+  ordersCollection.find({})
       .toArray((err, documents) => {
+        console.log(documents);
           res.send(documents);
       })
 });
 
-app.get('/doctors', (req, res) => {
-  doctorCollection.find({})
+app.get('/orders/:email', (req, res) => {
+  console.log("order = ",req.params.email);
+  const email=req.params.email;
+  ordersCollection.find({email: email})
       .toArray((err, documents) => {
           res.send(documents);
       })
 });
 
 app.post('/addAdmin', (req, res) => {
-  // const file = req.files.file;
   console.log('bod=',req.body);
   const name = req.body.name;
   const email = req.body.email;
-  // const newImg = file.data;
-  // const encImg = newImg.toString('base64');
-
-  // var image = {
-  //     contentType: file.mimetype,
-  //     size: file.size,
-  //     img: Buffer.from(encImg, 'base64')
-  // };
-
+ 
   adminCollection.insertOne({ name, email})
       .then(result => {
           res.send(result.insertedCount > 0);
       })
 })
 
+app.post('/addReview', (req, res) => {
+  const newReview = req.body;
+  console.log("review=",newReview);
+  reviewsCollection.insertOne(newReview)
+      .then(result => {
+        console.log("insert to DB");
+          res.send(result.insertedCount > 0)
+      })
+      .catch(err =>{console.log(err)})
+});
+
+app.get('/reviews',(req, res) => {
+  reviewsCollection.find({})
+  .toArray((err,documents) =>{
+    res.send(documents);
+  })
+})
 
 
-app.post('/isDoctor', (req, res) => {
+app.post('/orderService', (req, res) => {
+  const newReview = req.body;
+  console.log("review=",newReview);
+  ordersCollection.insertOne(newReview)
+      .then(result => {
+        console.log("insert to DB");
+          res.send(result.insertedCount > 0)
+      })
+      .catch(err =>{console.log(err)})
+});
+
+
+app.post('/isAdmin', (req, res) => {
   const email = req.body.email;
-  doctorCollection.find({ email: email })
+  adminCollection.find({ email: email })
       .toArray((err, doctors) => {
           res.send(doctors.length > 0);
       })
 });
 
+app.delete('/delete/:id',(req, res) => {
+  console.log(req.params.id);
+  serviceCollection.deleteOne({_id:ObjectId(req.params.id)})
+  .then((result) =>{
+      // console.log(result);
+     res.send(result.deletedCount>0) ;
+  })
 });
 
 
+});
 
-app.listen(port, () => {
+
+app.listen(process.env.PORT || port, () => {
   console.log(`Example app listening at http://localhost:${port}`)
 })
